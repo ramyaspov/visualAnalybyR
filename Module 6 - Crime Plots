@@ -1,0 +1,22 @@
+library(ggplot2)
+
+data("USArrests")
+
+total <- sum(USArrests$Murder, USArrests$Assault, USArrests$Rape)
+
+murder <- sum(USArrests$Murder) / total * 100
+assault <- sum(USArrests$Assault) / total * 100
+rape <- sum(USArrests$Rape) / total * 100
+
+
+
+pie(c(murder, assault, rape), 
+    labels = c(paste("Murders (",round(murder,2), "%)"), paste("Assaults (", round(assault,2), "%)"), paste("Rapes (", round(rape,2), "%)")), 
+    main = "USA Crime Percentages in 1973")
+
+stateAssaults <- ggplot(USArrests, aes(x = reorder(rownames(USArrests), -Assault), y = Assault)) +
+  geom_bar(stat="identity", fill = "red") +
+  labs(title = "Total US Assaults by State in 1973", x = "States", y = "Number of Assaults") +
+  theme(axis.text.x = element_text(angle = 90))
+
+stateAssaults
