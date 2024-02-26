@@ -1,0 +1,18 @@
+library(ggplot2)
+data(mtcars)
+
+# theme for title alignment
+theme <- theme(plot.title = element_text(hjust = 0.45)) 
+
+# Scatterplot with two quantitative variables and one categorical variable
+ggplot(mtcars, aes(x = hp, y =mpg, group = cyl, color = factor(cyl))) +
+  geom_point(size = 2) +
+  labs(title = "MPG and Horsepower of Cars by Cylinder Count", x = "Horsepower", y = "Miles Per Gallon (MPG)") +
+  scale_color_discrete(name = "Cylinder Count", labels = c("4", "6", "8")) +
+  theme
+
+# Boxplots of mpg for each transmission type
+ggplot(mtcars, aes(x = factor(am), y = mpg, fill = factor(am))) +
+  geom_boxplot()+
+  labs(title = "MPG of Manual vs Automatic Transmission Cars", x = "am", y = "mpg") +
+  scale_fill_discrete(name = "Transmission Type", labels = c("0-Manual", "1-Automatic")) + theme
