@@ -1,0 +1,13 @@
+library(ggplot2)
+library(corrplot)
+
+data(mtcars)
+
+# Corrplot for general understanding of variable relationships
+corrplot(cor(mtcars))
+
+# Scatterplot of Horsepower versus Acceleration
+ggplot(mtcars, aes(x = hp, y = qsec)) +
+  geom_point(col = "purple") +
+  labs(title = "Correlation between Horsepower and Acceleration of Cars", x = "Horsepower (hp)", y = "Acceleration (s)") +
+  geom_smooth(method = "lm", col = "red")
