@@ -1,0 +1,37 @@
+library(ggplot2)
+library(reshape2)
+library(zoo)
+library(corrgram)
+
+air <- airquality
+# Remove NAs from dataset
+air <- round(na.aggregate(air), 1)
+
+# Change the month and day count columns into a date column
+dates <- paste(air$Month, "/", air$Day, "/", 73, sep = "")
+air$Date <- as.Date(dates, format = "%m/%d/%y")
+air <- air[,-c(5,6)]
+
+# Change wind to 10 times its size to fit the range of other variables and melt with date as the first column
+airS <- air
+airS$Wind <- airS$Wind * 10
+meltAir <- melt(airS, id = "Date")
+
+# Corrgram to understand correlations (blue = posiitve, red = negative)
+corrgram(air, order = NULL, lower.panel=panel.shade, upper.panel=NULL, text.panel=panel.txt)
+
+# Heatmap of variables by month
+heatAir <- ggplot(meltAir, aes(x = Date, y = variable, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient(name = "value", low = "lightskyblue1", high = "midnightblue") +
+  ggtitle("1973 NY Air Quality Heat Map") +
+  theme(plot.title = element_text(hjust = 0.45))
+heatAir
+
+# Scatterplot of four variables
+scatterAir <- ggplot(air, aes(x = Solar.R, y = Temp)) +
+  geom_point(aes(size = Ozone, color = Wind)) +
+  scale_color_gradient(name = "Wind", low = "orange", high = "orange4") +
+  ggtitle("Multivariate Scatterplot of 1973 NY Air Quality") +
+  theme(plot.title = element_text(hjust = 0.45))
+scatterAir
