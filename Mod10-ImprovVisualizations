@@ -1,0 +1,27 @@
+hotdogs <- read.csv("http://datasets.flowingdata.com/hot-dog-contest-winners.csv")
+
+head(hotdogs)
+colors <- ifelse(hotdogs$New.record == 1, "darkred", "grey")
+
+barplot(hotdogs$Dogs.eaten, names.arg = hotdogs$Year, col=colors, border=NA,
+        main = "Nathan's Hot Dog Eating Contest Results, 1980-2010",  xlab="Year", ylab="Hot dogs and buns (HDBs) eaten")
+
+ggplot(hotdogs, aes(x = Year, y = Dogs.eaten)) + 
+  geom_bar(aes(fill = Country), stat = "identity") + 
+  geom_text(data = hotdogs[hotdogs$New.record == 1,], aes(label = Dogs.eaten), position = position_dodge(width=0.2), angle = 90, hjust = 1.55) +
+  geom_point(data = hotdogs[hotdogs$New.record == 1,], aes(size = 1), shape = 18, color = "darkred") +
+  labs(title="Nathan's Hot Dog Eating Contest Results, 1980-2010", fill="Country Winner", size = "New Record", x = "Year", y = "Hot dogs and buns (HDBs) eaten")
+
+head(economics)
+year <- function(x) as.POSIXlt(x)$year + 1900
+economics$year <- year(economics$date) # we setting up our analysis
+head(economics)
+plot1 <- qplot(date, uempmed, data = economics, geom = "line")
+plot1
+
+ggplot(economics) +
+  geom_line(aes(x = date, y = uempmed, color = "Unemploy Duration"), stat = "identity") +
+  geom_line(aes(x = date, y = 100 * unemploy/pop, color = "Unemploy/Pop"), stat = "identity") +
+  scale_y_continuous(sec.axis=sec_axis(~.*0.01, name = "Unemploy/Pop")) +
+  labs(title = "U.S Unemployment vs Mean Unemployment Duration, 1967-2015", x = "Year", y = "Unemploy Duration (weeks)") +
+  theme(legend.position = "bottom")
