@@ -1,0 +1,17 @@
+library(RJSONIO)
+library(jsonlite)
+library(network)
+library(sna)
+library(ggplot2)
+library(RColorBrewer)
+library(GGally)
+
+
+
+addams <- fromJSON(txt = 'Desktop/Visual Analytics/addamsfamily.json')
+addamsNet <- addams$network
+edges <- addamsNet$edges
+nodes <- addams$nodes
+positions <- addamsNet$positions
+
+ggnet2(edges, label = TRUE, size = "indegree", edge.label.size = 15, color = "purple")
