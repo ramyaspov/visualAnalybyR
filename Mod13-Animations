@@ -1,3 +1,9 @@
+library(gganimate)
+library(ggplot2)
+library(dplyr)
+library(gifski)
+library(magick)
+
 # Import Data
 climdiv_national_year <- read_csv("climdiv_national_year.csv")
 climdiv_state_year <- read_csv("climdiv_state_year.csv")
