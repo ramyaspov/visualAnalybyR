@@ -1,0 +1,48 @@
+# Import Data
+climdiv_national_year <- read_csv("climdiv_national_year.csv")
+climdiv_state_year <- read_csv("climdiv_state_year.csv")
+
+# Filter State temperatures to only Florida which has a FIP of 12 and remove the FIP row after
+climateFL <- filter(climdiv_state_year, fips == "12")
+climateFL <- climateFL[,-1]
+
+# Renamed the US temp data
+climateUS <- climdiv_national_year
+
+# Create static ggplot line graph of US temp
+graphUS <- ggplot(climdiv_national_year, aes(x = year, y = temp)) +
+  geom_line(color = "red") +
+  labs(title = "Annual average temperatures in Contiguous U.S.",
+       x = "Year",
+       y = "Temperature (F)")
+# Create US temp animation
+animation1 <- graphUS +
+  transition_reveal(year)
+
+aUS <- animate(animation1, renderer = gifski_renderer())
+
+# Craete static ggplot line graph of Florida temp
+graphFL <- ggplot(climateFL, aes(x = year, y = temp)) +
+  geom_line(color = "purple") +
+  labs(title = "Annual average temperatures in Florida",
+       x = "Year",
+       y = "Temperature (F)")
+# Create Florida temp animation
+animation2 <- graphFL +
+  transition_reveal(year)
+
+aFL <- animate(animation2, renderer = gifski_renderer())
+
+# Save both animations in magick file
+mUS <- image_read(aUS)
+mFL <- image_read(aFL)
+
+# Join the two animations
+climateD <- image_append(c(mUS[1], mFL[1]))
+
+for(i in 2:125) {
+  combined <- image_append(c(mUS[i], mFL[i]))
+  climateD <- c(climateD, combined)
+}
+# Save animation
+anim_save("climateD.gif", climateD)
