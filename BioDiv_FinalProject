@@ -1,0 +1,146 @@
+### US National Parks Biodiversity and Nativity of Species Analysis ###
+
+# Libraries
+library(tidyverse)
+library(choroplethrMaps)
+library(choroplethr)
+library(RColorBrewer)
+library(gganimate)
+library(gifski)
+library(magick)
+
+# Import Data
+parks <- read.csv("Desktop/Visual Analytics/parks.csv")
+species <- read.csv("Desktop/Visual Analytics/species.csv")
+
+### Create biodiversity map
+# Remove unnecessary columns in Species data and join park dataset
+species <- species[,-c(4,5,6,8,11)]
+biodiv <- merge(parks, species, by = 'Park.Name')
+
+# stateBio dataset for state biodiversity density calculation
+stateBio <- biodiv %>%
+  group_by(State) %>%
+  filter(Occurrence == "Present") %>%
+  count(Occurrence == "Present") %>%
+  rename(biodivCount = n)
+  
+parks2 <- parks %>%
+  group_by(State) %>%
+  na.omit() %>%
+  summarize(Sum = sum(Acres, na.rm = TRUE))
+
+stateBio$totAcres <- parks2$Sum
+
+# Calculate biodiversity density for state
+stateBio$biodivDensity <- stateBio$biodivCount / stateBio$totAcres
+
+# Assign parks that are shared by state to the state with most of the park area
+convert<-function(x){
+  for(i in 1:length(state.abb)){
+    if(as.character(x) == state.abb[i]){
+      return(state.name[i])
+      break
+    }
+    else if(as.character(x) == 'TN, NC') {
+      return(state.name[42]) #Tennessee
+      break
+    }
+    else if(as.character(x) == 'WY, MT, ID') {
+      return(state.name[50]) #Wyoming
+      break
+    }
+    else if(as.character(x) == 'CA, NV') {
+      return(state.name[5]) # cal.
+      break
+    }       
+  }   
+  
+}
+
+stateBio$State <- sapply(stateBio$State, convert)
+# Remove duplicate California and Wyoming
+stateBio <- stateBio[-c(5, 26),]
+# Alter names to fit choropleth map requirements 
+stateBio$State <- sapply(stateBio$State, tolower)
+stateMap <- stateBio[,c(1,5)]
+colnames(stateMap) <- c('region', 'value')
+
+# Create Choropleth map
+state_choropleth(stateMap)
+c = StateChoropleth$new(stateMap)
+c$ggplot_scale = scale_fill_brewer(name = "Biodiversity Density", palette = "RdYlGn")
+c$show_labels = FALSE
+c$render() + ggtitle("2016 National Park Biodiversity Density by State") + theme(plot.title = element_text(hjust = 0.2))
+
+## Based on the biodiversity density, we see Florida has one of the lowest and Ohio one of the highest densities
+
+# Create bar plot of both states' native versus non-native species by state and park
+stateNat <- biodiv %>%
+  group_by(State) %>%
+  filter(Nativeness != "Unknown") %>%
+  count(Nativeness == "Native")
+
+stateNat$State <- sapply(stateNat$State, convert)
+# Remove duplicate California and Wyoming
+stateNat <- stateNat[c(13,14,33,34),]
+
+# Create Native vs Nonnative Species Barplot for States
+stateNat$Native <- stateNat$`Nativeness == "Native"` == TRUE
+stateNat$NonNative <- stateNat$`Nativeness == "Native"` == FALSE
+statePlot <- ggplot(stateNat, aes(fill = `Nativeness == "Native"` , x = State, y = n)) +
+  geom_bar(position="stack", stat = "identity") +
+  labs(title = "Native vs Nonnative Species by State", x = "State", y = "# of Species") +
+  scale_fill_discrete(name = "Nativeness", labels = c("Native", "Nonnative"), type = c("darkgreen", "darkred"))
+
+statePlot
+
+# Create Native vs Nonnative Species Barplot for States
+parkNat <- biodiv %>%
+  filter(State == c("FL", "OH")) %>%
+  group_by(State,Park.Name) %>%
+  filter(Nativeness != "Unknown") %>%
+  count(Nativeness == "Native")
+
+parkPlot <- ggplot(parkNat, aes(fill = `Nativeness == "Native"` , x = Park.Name, y = n)) +
+  geom_bar(position="stack", stat = "identity") +
+  coord_flip() +
+  labs(title = "Native vs Nonnative Species in Florida and Ohio National Parks", y = "# of Species", x = "Park") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_fill_discrete(name = "Nativeness", labels = c("Native", "Nonnative"), type = c("darkgreen", "darkred"))
+
+parkPlot
+
+# Animation of park nativeness plot for comparison
+animation <- parkPlot +
+  transition_states(`Nativeness == "Native"`, transition_length = 2, state_length = 1) +
+  ease_aes('sine-in-out')
+animate(animation, renderer = gifski_renderer())
+anim_save("Desktop/Visual Analytics/barplot.gif")
+
+
+### Tableau Plots: Create csv file to use in Tableau for pie charts of native and non native species distribution
+
+# Remove unnecessary columns
+pieDiv <- biodiv[,c(1,3,5,6,8,10,11)]
+
+# Filter species type data to include parks in FL and OH, native species, and present species
+pieDivNat <- pieDiv %>%
+  group_by(State, Park.Name) %>%
+  filter(Occurrence == "Present", Nativeness == "Native") %>%
+  count(Category)
+
+pieDivNatFoc <- pieDivNat[pieDivNat$State == "FL" | pieDivNat$State == "OH",]
+
+# Export CSV
+write.csv(pieDivNatFoc,"Desktop/Visual Analytics/pieDivNatFoc.csv")  
+
+# Filter species type data to include parks in FL and OH, nonnative species, and present species
+pieDivNon <- pieDiv %>%
+  group_by(State, Park.Name) %>%
+  filter(Occurrence == "Present", Nativeness == "Not Native") %>%
+  count(Category)
+pieDivNonFoc <- pieDivNon[pieDivNon$State == "FL" | pieDivNon$State == "OH",]
+
+# Export CSV
+write.csv(pieDivNonFoc,"Desktop/Visual Analytics/pieDivNonFoc.csv")  
